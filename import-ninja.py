@@ -422,18 +422,29 @@ class BaseDuplicateTracker(object):
 
     def get_material(self, rip, texset):
         mat = bpy.data.materials.new(rip.basename)
-
         mat.use_nodes = True
-        nodePosY = len(texset) * 30 / 2
+        mat.node_tree.nodes.clear()
+
+        outputNode = mat.node_tree.nodes.new("ShaderNodeOutputMaterial")
+        outputNode.location = [outputNode.width * 2, 0]
+        viewerNode = mat.node_tree.nodes.new("ShaderNodeEmission")
+        texNodeY = len(texset) * 30 / 2
+        firstTexNode = True
+
         for i in texset.keys():
             tex = texset[i]
             imgtex = self.get_texture(os.path.join(rip.dirname, tex))
 
             node = mat.node_tree.nodes.new("ShaderNodeTexImage")
             node.image = imgtex.image
-            node.location = [-node.width * 1.5, nodePosY]
+            node.location = [-node.width * 1.5, texNodeY]
             node.hide = True
-            nodePosY -= 30
+            texNodeY -= 30
+
+            if firstTexNode:
+                mat.node_tree.links.new(node.outputs[0], viewerNode.inputs[0])
+                mat.node_tree.links.new(viewerNode.outputs[0], outputNode.inputs[0])
+                firstTexNode = False
 
         mat['ninjarip_datakey'] = self.material_hash(rip, texset)
         return mat
