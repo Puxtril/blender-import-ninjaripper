@@ -4,7 +4,7 @@ import bpy_extras
 import mathutils
 
 from mathutils import Vector, Matrix
-from bpy_extras.io_utils import ImportHelper, orientation_helper_factory, axis_conversion, _check_axis_conversion
+from bpy_extras.io_utils import ImportHelper, orientation_helper, axis_conversion, _check_axis_conversion
 from bpy.props import *
 
 import bmesh
@@ -20,7 +20,7 @@ bl_info = {
     "name": "Ninja Ripper mesh data (.rip)",
     "author": "Alexander Gavrilov",
     "version": (0, 2),
-    "blender": (2, 77, 0),
+    "blender": (2, 80, 0),
     "location": "File > Import-Export > Ninja Ripper (.rip) ",
     "description": "Import Ninja Ripper mesh data",
     "warning": "",
@@ -375,7 +375,7 @@ class BaseDuplicateTracker(object):
 
     def create_texture(self, fullpath):
         try:
-            teximage = bpy.data.images.load(fullpath, True)
+            teximage = bpy.data.images.load(fullpath, check_existing=True)
             if teximage.users > 0:
                 for tex in bpy.data.textures:
                     if tex.type == 'IMAGE' and tex.image == teximage:
@@ -408,7 +408,6 @@ class BaseDuplicateTracker(object):
 
     def material_hash(self, rip, texset):
         hash = hashlib.sha1()
-        #hash = ""
 
         for i in sorted(texset.keys()):
             path = os.path.join(rip.dirname, texset[i])
@@ -424,15 +423,17 @@ class BaseDuplicateTracker(object):
     def get_material(self, rip, texset):
         mat = bpy.data.materials.new(rip.basename)
 
-        first = True
+        mat.use_nodes = True
+        nodePosY = len(texset) * 30 / 2
         for i in texset.keys():
             tex = texset[i]
             imgtex = self.get_texture(os.path.join(rip.dirname, tex))
 
-            slot = mat.texture_slots.create(i)
-            slot.texture = imgtex
-            slot.use = first
-            first = False
+            node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+            node.image = imgtex.image
+            node.location = [-node.width * 1.5, nodePosY]
+            node.hide = True
+            nodePosY -= 30
 
         mat['ninjarip_datakey'] = self.material_hash(rip, texset)
         return mat
@@ -628,7 +629,7 @@ class RipConversion(object):
         return groups
 
     def apply_matrix(self, vec):
-        return self.matrix * Vector(vec).to_3d()
+        return self.matrix @ Vector(vec).to_3d()
 
     def apply_matrix_list(self, lst):
         return list(map(self.apply_matrix, lst))
@@ -656,8 +657,6 @@ class RipConversion(object):
             normals = self.get_normals(rip)
             if normals is not None:
                 mesh.use_auto_smooth = True
-                mesh.show_normal_vertex = True
-                mesh.show_normal_loop = True
                 mesh.normals_split_custom_set_from_vertices(self.apply_matrix_list(normals))
 
         mesh.update()
@@ -747,14 +746,14 @@ class RipConversion(object):
 
         if 'ninjarip_vgroups' in mesh:
             for vname in mesh["ninjarip_vgroups"].split(','):
-                nobj.vertex_groups.new('blendweight'+vname)
+                nobj.vertex_groups.new(name='blendweight'+vname)
 
         for i in range(len(rip.shaders)):
             nobj["shader_"+str(i)] = rip.shaders[i]
 
         return nobj
 
-    def convert_object(self, rip, scene, obj_name):
+    def convert_object(self, rip, context, obj_name):
         mesh_key = self.mesh_datakey(rip)
         mesh = self.dedup.get_mesh(mesh_key, lambda: self.convert_mesh(rip))
 
@@ -779,23 +778,22 @@ class RipConversion(object):
         # Select object
         found = False
 
-        for o in scene.objects:
-            o.select = False
+        for o in context.collection.objects:
+            o.select_set(False)
             if o == nobj:
                 found = True
 
         if not found:
-            scene.objects.link(nobj)
-            scene.update()
+            context.collection.objects.link(nobj)
+            context.view_layer.update()
 
-        nobj.select = True
-        scene.objects.active = nobj
+        nobj.select_set(True)
+        context.view_layer.objects.active = nobj
 
         return nobj
 
-IORIPOrientationHelper = orientation_helper_factory("IORIPOrientationHelper", axis_forward='Y', axis_up='Z')
-
-class RipImporter(bpy.types.Operator, ImportHelper, IORIPOrientationHelper):
+@orientation_helper(axis_forward='Y', axis_up='Z')
+class RipImporter(bpy.types.Operator, ImportHelper):
     """Load Ninja Ripper mesh data"""
     bl_idname = "import_mesh.rip"
     bl_label = "Import RIP"
@@ -943,7 +941,7 @@ class RipImporter(bpy.types.Operator, ImportHelper, IORIPOrientationHelper):
         return change
 
     def draw(self, context):
-        self.layout.operator('file.select_all_toggle')
+        self.layout.operator('file.select_all')
 
         rot = self.layout.box()
         rot.prop(self, "axis_forward")
@@ -1053,7 +1051,7 @@ class RipImporter(bpy.types.Operator, ImportHelper, IORIPOrientationHelper):
                 rf.parse_shaders()
             if self.skip_untextured and not rf.has_textures():
                 continue
-            conv.convert_object(rf, context.scene, file)
+            conv.convert_object(rf, context, file)
 
         return {'FINISHED'}
 
@@ -1066,12 +1064,12 @@ def menu_import(self, context):
     self.layout.operator(RipImporter.bl_idname, text="Ninja Ripper (.rip)")
 
 def register():
-    bpy.utils.register_module(__name__)
-    bpy.types.INFO_MT_file_import.append(menu_import)
+    bpy.utils.register_class(RipImporter)
+    bpy.types.TOPBAR_MT_file_import.append(menu_import)
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
-    bpy.types.INFO_MT_file_import.remove(menu_import)
+    bpy.utils.unregister_class(RipImporter)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_import)
 
 if __name__ == "__main__":
     register()
