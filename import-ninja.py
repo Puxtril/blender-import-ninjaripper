@@ -696,7 +696,7 @@ class RipConversion(object):
             def add_color_layer(name,cdata):
                 layer = bm.loops.layers.color.new(name)
                 for i,vert in enumerate(bm.verts):
-                    color = mathutils.Vector(cdata[i])
+                    color = mathutils.Vector(cdata[i]).to_4d()
                     for loop in vert.link_loops:
                         loop[layer] = color
 
@@ -1023,7 +1023,7 @@ class RipImporter(bpy.types.Operator, ImportHelper):
 
         matrix = axis_conversion(from_forward=self.axis_forward, from_up=self.axis_up)
         if self.flip_x_axis:
-            matrix = Matrix.Scale(-1, 3, (1.0, 0.0, 0.0)) * matrix
+            matrix = Matrix.Scale(-1, 3, (1.0, 0.0, 0.0)) @ matrix
 
         conv = RipConversion()
 
