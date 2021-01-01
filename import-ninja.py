@@ -811,120 +811,120 @@ class RipImporter(bpy.types.Operator, ImportHelper):
     bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = ".rip"
-    filter_glob = StringProperty(default="*.rip", options={'HIDDEN'})
-    directory = StringProperty(options={'HIDDEN'})
-    files = CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement)
+    filter_glob: StringProperty(default="*.rip", options={'HIDDEN'})
+    directory: StringProperty(options={'HIDDEN'})
+    files: CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement)
 
-    flip_x_axis = BoolProperty(
+    flip_x_axis: BoolProperty(
         default=False, name="Invert X axis",
         description="Flip the X axis values of the model"
     )
-    flip_winding = BoolProperty(
+    flip_winding: BoolProperty(
         default=False, name="Flip winding",
         description="Invert triangle winding (NOTE: Invert X Axis is taken into account!)"
     )
 
-    use_normals = BoolProperty(
+    use_normals: BoolProperty(
         default=True, name="Import custom normals",
         description="Import vertex normal data as custom normals"
     )
-    normal_int = IntProperty(
-        default = 255, name="Int Normal divisor",
+    normal_int: IntProperty(
+        default= 255, name="Int Normal divisor",
         description="Divide by this value if the normal data type is integer"
     )
-    normal_mul = FloatVectorProperty(
+    normal_mul: FloatVectorProperty(
         size=3,default=(1.0,1.0,1.0),step=1,
         name="Scale",subtype='XYZ',
         description="Multiply the raw normals by these values"
     )
-    normal_add = FloatVectorProperty(
+    normal_add: FloatVectorProperty(
         size=3,default=(0.0,0.0,0.0),step=1,
         name="Offset",subtype='TRANSLATION',
         description="Add this to the scaled normal coordinates"
     )
 
-    uv_int = IntProperty(
-        default = 255, name="Int UV divisor",
+    uv_int: IntProperty(
+        default= 255, name="Int UV divisor",
         description="Divide by this value if the UV data type is integer"
     )
-    uv_mul = FloatVectorProperty(
+    uv_mul: FloatVectorProperty(
         size=2,default=(1.0,1.0),step=1,
         name="Scale",subtype='XYZ',
         description="Multiply the raw UVs by these values"
     )
-    uv_add = FloatVectorProperty(
+    uv_add: FloatVectorProperty(
         size=2,default=(0.0,0.0),step=1,
         name="Offset",subtype='TRANSLATION',
         description="Add this to the scaled UV coordinates"
     )
-    uv_flip_y = BoolProperty(
-        name = "Flip Vertical",
+    uv_flip_y: BoolProperty(
+        name= "Flip Vertical",
         description="Additionally apply a 1-V transform"
     )
 
-    use_weights = BoolProperty(
+    use_weights: BoolProperty(
         default=True, name="Import blend weights",
         description="Import vertex blend weight data as vertex groups"
     )
 
-    use_shaders = BoolProperty(
+    use_shaders: BoolProperty(
         default=False, name="Filter by shader inputs",
         description="Scan the dumped shader code to filter unused attributes"
     )
 
-    filter_unused_attrs = BoolProperty(
+    filter_unused_attrs: BoolProperty(
         default=True, name="Skip unused attributes",
         description="Do not import attributes unused in the current shader"
     )
 
-    filter_unused_textures = BoolProperty(
+    filter_unused_textures: BoolProperty(
         default=True, name="Skip unused textures",
         description="Do not import textures unused in the current shader"
     )
 
-    skip_untextured = BoolProperty(
+    skip_untextured: BoolProperty(
         default=False, name="Skip if untextured",
         description="Skip meshes that don't use any textures (e.g. from zbuffer prefill pass)"
     )
 
-    detect_duplicates = BoolProperty(
+    detect_duplicates: BoolProperty(
         default=False, name="Detect duplication",
         description="Detect and share identical meshes and textures. Attaches materials to objects instead of mesh."
     )
-    cross_duplicates = BoolProperty(
+    cross_duplicates: BoolProperty(
         default=False, name="Cross-import tracking",
         description="Track duplication across multiple imports. WARNING: does not detect edits to objects or changing import settings."
     )
-    notex_duplicates = BoolProperty(
+    notex_duplicates: BoolProperty(
         default=False, name="Ignore missing textures",
         description="Missing texture files don't contribute to hashes for duplicate detection. Useful if you deleted dynamic textures like depth or shadow data."
     )
-    skip_duplicates = BoolProperty(
+    skip_duplicates: BoolProperty(
         default=False, name="Skip full duplicates",
         description="Skip meshes that have exactly the same data and textures"
     )
 
-    override_attrs = BoolProperty(
+    override_attrs: BoolProperty(
         default=False, name="Override attribute types",
         description="Manually specify which attribute indices to use for what data"
     )
 
-    override_pos = StringProperty(
+    override_pos: StringProperty(
         default="0", name="Position", description="Attribute index specifying position"
     )
-    override_normal = StringProperty(
+    override_normal: StringProperty(
         default="1", name="Normal", description="Attribute index specifying normal"
     )
-    override_uv = StringProperty(
+    override_uv: StringProperty(
         default="2", name="UV", description="Comma-separated attribute indices specifying UV coordinates"
     )
-    override_color = StringProperty(
+    override_color: StringProperty(
         default="", name="Color", description="Comma-separated attribute indices specifying vertex colors"
     )
-    override_index = StringProperty(
+    override_index: StringProperty(
         default="", name="Index", description="Comma-separated attribute indices specifying blend indices"
     )
-    override_weight = StringProperty(
+    override_weight: StringProperty(
         default="", name="Weight", description="Comma-separated attribute indices specifying blend weights"
     )
 
